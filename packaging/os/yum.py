@@ -67,7 +67,13 @@ options:
     version_added: "0.9"
     default: null
     aliases: []
-    
+
+  exclude:
+    description:
+      - Exclude packages from update/install.
+    required: false
+    default: null
+
   disablerepo:
     description:
       - I(Repoid) of repositories to disable for the install/update operation.
@@ -123,6 +129,9 @@ EXAMPLES = '''
 
 - name: install the 'Development tools' package group
   yum: name="@Development tools" state=present
+
+- name: install the latest version of Apache
+  yum: name=* state=latest exclude=foo*,bar*
 '''
 
 def_qf = "%{name}-%{version}-%{release}.%{arch}"
@@ -711,7 +720,7 @@ def latest(module, items, repoq, yum_basecmd, conf_file, en_repos, dis_repos):
     module.exit_json(**res)
 
 def ensure(module, state, pkgspec, conf_file, enablerepo, disablerepo,
-           disable_gpg_check):
+           disable_gpg_check, exclude):
 
     # take multiple args comma separated
     items = pkgspec.split(',')
@@ -719,7 +728,10 @@ def ensure(module, state, pkgspec, conf_file, enablerepo, disablerepo,
     # need debug level 2 to get 'Nothing to do' for groupinstall.
     yum_basecmd = [yumbin, '-d', '2', '-y']
 
-        
+    if exclude:
+        yum_exclude_cmd = "--exclude=%s" % exclude
+        yum_basecmd.append(yum_exclude_cmd)
+
     if not repoquery:
         repoq = None
     else:
@@ -805,6 +817,7 @@ def main():
             disable_gpg_check=dict(required=False, default="no", type='bool'),
             # this should not be needed, but exists as a failsafe
             install_repoquery=dict(required=False, default="yes", type='bool'),
+            exclude=dict(),
         ),
         required_one_of = [['name','list']],
         mutually_exclusive = [['name','list']],
@@ -828,8 +841,9 @@ def main():
         enablerepo = params.get('enablerepo', '')
         disablerepo = params.get('disablerepo', '')
         disable_gpg_check = params['disable_gpg_check']
+        exclude = params['exclude']
         res = ensure(module, state, pkg, params['conf_file'], enablerepo,
-                     disablerepo, disable_gpg_check)
+                     disablerepo, disable_gpg_check, exclude)
         module.fail_json(msg="we should never get here unless this all failed", **res)
 
 # import module snippets
