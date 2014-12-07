@@ -130,7 +130,7 @@ EXAMPLES = '''
 - name: install the 'Development tools' package group
   yum: name="@Development tools" state=present
 
-- name: install the latest version of Apache
+- name: install the latest version of all packages while excluding foo* and bar*
   yum: name=* state=latest exclude=foo*,bar*
 '''
 
@@ -729,7 +729,7 @@ def ensure(module, state, pkgspec, conf_file, enablerepo, disablerepo,
     yum_basecmd = [yumbin, '-d', '2', '-y']
 
     if exclude:
-        yum_exclude_cmd = "--exclude=%s" % exclude
+        yum_exclude_cmd = "--exclude=%s" % ','.join(exclude)
         yum_basecmd.append(yum_exclude_cmd)
 
     if not repoquery:
@@ -817,7 +817,7 @@ def main():
             disable_gpg_check=dict(required=False, default="no", type='bool'),
             # this should not be needed, but exists as a failsafe
             install_repoquery=dict(required=False, default="yes", type='bool'),
-            exclude=dict(),
+            exclude=dict(type='list', default=[]),
         ),
         required_one_of = [['name','list']],
         mutually_exclusive = [['name','list']],
