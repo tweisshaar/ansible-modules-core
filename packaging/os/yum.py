@@ -73,6 +73,7 @@ options:
       - Exclude packages from update/install.
     required: false
     default: null
+    version_added: 1.9
 
   disablerepo:
     description:
